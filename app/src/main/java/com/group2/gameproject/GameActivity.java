@@ -6,7 +6,9 @@ import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.CompoundButton;
 import android.widget.SeekBar;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -14,6 +16,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.android.material.snackbar.Snackbar;
 import com.group2.gameproject.databinding.ActivityGameBinding;
 import com.group2.gameproject.databinding.BetPopUpBinding;
 
@@ -30,8 +33,8 @@ public class GameActivity extends AppCompatActivity {
     private int editingBetNum = 0;
 
     private ArrayList<HorseData> horseDatas;
-    private ArrayList<Integer> selectedList;
 
+    private boolean isCallChangeCB = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,9 +50,15 @@ public class GameActivity extends AppCompatActivity {
         binding.ibEdit1.setOnClickListener(v -> showBetDialog(1));
         binding.ibEdit2.setOnClickListener(v -> showBetDialog(2));
         binding.ibEdit3.setOnClickListener(v -> showBetDialog(3));
+        binding.sb1.setEnabled(false);
+        binding.sb2.setEnabled(false);
+        binding.sb3.setEnabled(false);
         setDefaultState();
         updateMoneyUI();
         setUpDialog();
+        binding.cb1.setOnCheckedChangeListener((v,isChecked) -> onSelectChangeHorseBet(1, isChecked));
+        binding.cb2.setOnCheckedChangeListener((v,isChecked) -> onSelectChangeHorseBet(2, isChecked));
+        binding.cb3.setOnCheckedChangeListener((v,isChecked) -> onSelectChangeHorseBet(3, isChecked));
         reset();
 
 
@@ -59,6 +68,81 @@ public class GameActivity extends AppCompatActivity {
             return insets;
         });
     }
+
+    private int getHorseBetValue(int horseNum){
+        String textValue = "";
+        switch (horseNum){
+            case 1:{
+                textValue = binding.tvBet1.getText().toString();
+                break;
+            }
+            case 2:{
+                textValue = binding.tvBet2.getText().toString();
+                break;
+            }
+            case 3:{
+                textValue = binding.tvBet3.getText().toString();
+                break;
+            }
+        }
+        return Integer.parseInt(textValue.substring(0,textValue.indexOf("$")));
+    }
+
+    private void onSelectChangeHorseBet(int horseNum, boolean isBet){
+        if(isCallChangeCB){
+            if(isBet){
+                selectedHorseBet(horseNum);
+            }else {
+                unSelectHorseBet(horseNum);
+            }
+        }
+
+    }
+
+    private void setChecked(int horseNum,boolean isChecked){
+        switch (horseNum){
+            case 1:{
+                binding.cb1.setChecked(isChecked);
+                break;
+            }
+            case 2:{
+                binding.cb2.setChecked(isChecked);
+                break;
+            }
+            case 3:{
+                binding.cb3.setChecked(isChecked);
+                break;
+            }
+        }
+    }
+
+    private void unSelectHorseBet(int horseNum){
+        int valueBet = getHorseBetValue(horseNum);
+        currentMoney += valueBet;
+        showMessage("Hủy đặt cược đội "+horseNum+": +"+valueBet+"$");
+
+        updateMoneyUI();
+    }
+
+    private void selectedHorseBet(int horseNum) {
+       int valueBet = getHorseBetValue(horseNum);
+        if(valueBet>currentMoney){
+            setChecked(horseNum, false);
+            showMessage("Bạn không đủ tiền để đặt cược!");
+
+        }else{
+            currentMoney -= valueBet;
+            showMessage("Đặt cược đội "+horseNum+": -"+valueBet+"$");
+            updateMoneyUI();
+        }
+
+    }
+
+    private void showMessage(String message){
+        Snackbar snackbar = Snackbar.make(binding.llResult, message,Snackbar.LENGTH_SHORT);
+        snackbar.show();
+    }
+
 
     private void updateMoneyUI(){
         binding.tvTotalMoney.setText(currentMoney+"$");
@@ -80,7 +164,7 @@ public class GameActivity extends AppCompatActivity {
 
         dialogBinding.ibClose.setOnClickListener(v -> dialog.dismiss());
         dialogBinding.btnBet.setOnClickListener(v -> onBetClick());
-        dialogBinding.tvBetTitle.setText("Đặt cược đội "+editingBetNum);
+
     }
 
     private void onBetClick(){
@@ -104,6 +188,7 @@ public class GameActivity extends AppCompatActivity {
 
     private void showBetDialog(int horseNum){
         editingBetNum =  horseNum;
+        dialogBinding.tvBetTitle.setText("Đặt cược đội "+editingBetNum);
         String value = "";
         switch (horseNum){
             case 1:{
@@ -119,16 +204,21 @@ public class GameActivity extends AppCompatActivity {
                 break;
             }
         }
+        value = value.substring(0,value.indexOf("$"));
+        dialogBinding.etChange.setText(value);
+        if(isCheckedHorse(horseNum)){
+            setChecked(horseNum, false);
+        }
 
-        dialogBinding.etChange.setText(value.substring(0,value.indexOf("$")));
         dialog.show();
     }
 
     private void reset(){
-
-        binding.cb1.setActivated(false);
-        binding.cb2.setActivated(false);
-        binding.cb3.setActivated(false);
+        isCallChangeCB = false;
+        binding.cb1.setChecked(false);
+        binding.cb2.setChecked(false);
+        binding.cb3.setChecked(false);
+        isCallChangeCB = true;
 
         binding.sb1.setProgress(0);
         binding.sb2.setProgress(0);
@@ -138,9 +228,26 @@ public class GameActivity extends AppCompatActivity {
         binding.llTop2.setVisibility(ViewGroup.INVISIBLE);
         binding.llTop3.setVisibility(ViewGroup.INVISIBLE);
 
+        //enable change
+        setChangeState(true);
+
+    }
+
+    private void setChangeState(boolean isChange){
+        binding.btnStart.setClickable(isChange);
+        binding.cb1.setClickable(isChange);
+        binding.cb2.setClickable(isChange);
+        binding.cb3.setClickable(isChange);
+        binding.ibEdit1.setClickable(isChange);
+        binding.ibEdit2.setClickable(isChange);
+        binding.ibEdit3.setClickable(isChange);
     }
 
     private void startRacing(){
+        //disable
+        setChangeState(false);
+        binding.btnReset.setClickable(false);
+
         binding.sb1.setMax(1000);
         binding.sb2.setMax(1000);
         binding.sb3.setMax(1000);
@@ -182,6 +289,10 @@ public class GameActivity extends AppCompatActivity {
                 HorseData h = horseDatas.get(0);
                 binding.tvResult1.setText("Đội "+h.horseNumber+" - Thời gian: "+(h.finishTime/1000.0) +" Giây");
                 binding.llTop1.setVisibility(ViewGroup.VISIBLE);
+                if(isCheckedHorse(h.horseNumber)){
+                    currentMoney+= getHorseBetValue(h.horseNumber);
+                    updateMoneyUI();
+                }
                 break;
             }
             case 2:{
@@ -194,8 +305,32 @@ public class GameActivity extends AppCompatActivity {
                 HorseData h = horseDatas.get(2);
                 binding.tvResult3.setText("Đội "+h.horseNumber+" - Thời gian: "+(h.finishTime/1000.0) +" Giây");
                 binding.llTop3.setVisibility(ViewGroup.VISIBLE);
+                onFinishRace();
                 break;
             }
         }
+    }
+
+    private boolean isCheckedHorse(int horseNum){
+        boolean isChecked = false;
+        switch (horseNum){
+            case 1:{
+                isChecked = binding.cb1.isChecked();
+                break;
+            }
+            case 2:{
+                isChecked = binding.cb2.isChecked();
+                break;
+            }
+            case 3:{
+                isChecked = binding.cb3.isChecked();
+                break;
+            }
+        }
+        return isChecked;
+    }
+
+    private void onFinishRace(){
+        binding.btnReset.setClickable(true);
     }
 }

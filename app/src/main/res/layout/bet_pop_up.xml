@@ -73,7 +73,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="30dp"
                 android:backgroundTint="#FE5E95"
-                android:text="Đặt cược!"
+                android:text="Đặt tiền"
                 android:textAllCaps="true"
                 android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="parent"
