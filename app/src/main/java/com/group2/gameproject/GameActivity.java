@@ -1,22 +1,24 @@
 package com.group2.gameproject;
 
 import android.app.Dialog;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.CompoundButton;
 import android.widget.SeekBar;
-import android.widget.Toast;
+import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-
 import com.google.android.material.snackbar.Snackbar;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.group2.gameproject.databinding.ActivityGameBinding;
 import com.group2.gameproject.databinding.BetPopUpBinding;
 
@@ -32,6 +34,10 @@ public class GameActivity extends AppCompatActivity {
     BetPopUpBinding dialogBinding;
     private int editingBetNum = 0;
 
+    TextView txtUsername;
+    GoogleSignInOptions gOptions;
+    GoogleSignInClient gClient;
+
     private ArrayList<HorseData> horseDatas;
 
     private boolean isCallChangeCB = true;
@@ -42,7 +48,20 @@ public class GameActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         //link to view
         binding = ActivityGameBinding.inflate(getLayoutInflater());
+
+
         setContentView(binding.getRoot());
+
+        txtUsername = (TextView) findViewById(R.id.userName);
+
+        gOptions = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestEmail().build();
+        gClient = GoogleSignIn.getClient(this, gOptions);
+
+        GoogleSignInAccount gAccount = GoogleSignIn.getLastSignedInAccount(this);
+        if(gAccount != null){
+            String loginName = gAccount.getDisplayName();
+            txtUsername.setText(loginName);
+        }
 
         //set up ui
         binding.btnStart.setOnClickListener(v -> startRacing());
