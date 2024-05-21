@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="450dp"
         android:layout_margin="20dp"
-        android:background="@drawable/pop_up_bg_gradient"
+        android:background="@drawable/vicory_border"
         android:padding="10dp"
 
         app:layout_constraintBottom_toBottomOf="parent"
@@ -58,6 +58,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:text="YOU WIN"
+
                 android:textSize="50sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.495"
