@@ -342,7 +342,7 @@ public class GameActivity extends AppCompatActivity {
                 binding.tvResult1.setText("Đội "+h.horseNumber+" - Thời gian: "+(h.finishTime/1000.0) +" Giây");
                 binding.llTop1.setVisibility(ViewGroup.VISIBLE);
                 if(isCheckedHorse(h.horseNumber)){
-                    winMoney= getHorseBetValue(h.horseNumber);
+                    winMoney= getHorseBetValue(h.horseNumber) * 2;
                     currentMoney+= winMoney;
                     updateMoneyUI();
                 }else{
