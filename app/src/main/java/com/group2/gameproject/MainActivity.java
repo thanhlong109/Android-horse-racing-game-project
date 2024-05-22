@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -22,25 +23,26 @@ import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 import com.group2.gameproject.databinding.ActivityMainBinding;
 
-public class MainActivity extends AppCompatActivity {
-    private ActivityMainBinding binding;
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+
 
     GoogleSignInButton btnGGLogin;
     GoogleSignInOptions gOptions;
     GoogleSignInClient gClient;
 
+    private ActivityMainBinding binding;
+    private final String REQUIRE_MESSAGE = "Require";
+    private final String ACC_USERNAME = "test";
+    private  final  String ACC_PASS = "12345678";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
-
-        // Initialize the binding
-        binding = ActivityMainBinding.inflate(getLayoutInflater());
-        //setContentView(binding.getRoot());
-        setContentView(R.layout.activity_main);
-
-
+        binding =ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
         // Initialize the Google Sign-In button
+        SetUpUI();
         btnGGLogin = findViewById(R.id.btnLogin);
 
         gOptions = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestEmail().build();
@@ -80,5 +82,71 @@ public class MainActivity extends AppCompatActivity {
                 activityResultLauncher.launch(signinIntent);
             }
         });
+    }
+
+    private void SetUpUI(){
+        //
+        Account acc = new Account();
+        acc.username = ACC_USERNAME;
+        acc.password = ACC_PASS;
+        Data.SignUp(acc);
+        //code
+        // password
+        TextUtils.AddOnTextChange(binding.etSignInPassword, string -> {
+            if(TextUtils.isNullOrEmpty(string)){
+                binding.tilSignInPassword.setError(REQUIRE_MESSAGE);
+            }else{
+                binding.tilSignInPassword.setError(null);
+            }
+        });
+
+        //Username
+        TextUtils.AddOnTextChange(binding.etSignInUsername, string -> {
+            if(TextUtils.isNullOrEmpty(string)){
+                binding.tilSignInUsername.setError(REQUIRE_MESSAGE);
+            }else{
+                binding.tilSignInUsername.setError(null);
+            }
+        });
+
+        //
+        binding.tvGoToSignUp.setOnClickListener(this);
+        binding.btnSignIn.setOnClickListener(this);
+    }
+    @Override
+    public void onClick(View v) {
+        int id = v.getId();
+        if(id==binding.btnSignIn.getId()){
+            SignIn();
+        }else if(id == binding.tvGoToSignUp.getId()){
+            goToActivity(SignUpActivity.class,null);
+        }
+    }
+
+    private void SignIn(){
+        String username = binding.etSignInUsername.getText().toString();
+        String password = binding.etSignInPassword.getText().toString();
+
+        if(TextUtils.isNullOrEmpty(username)&& TextUtils.isNullOrEmpty(password)){
+            Toast.makeText(this, "Vui lòng nhập username và password", Toast.LENGTH_SHORT).show();
+        }else {
+            Account acc = Data.SignIn(username,password);
+            if(acc!=null){
+                Bundle bundle = new Bundle();
+                bundle.putString("username",username);
+                goToActivity(GameActivity.class, bundle);
+                Toast.makeText(this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
+            }else{
+                Toast.makeText(this, "Username hoặc password không đúng!", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void goToActivity(Class classs, Bundle bundle){
+        Intent intent = new Intent(this, classs);
+        if(bundle != null)
+            intent.putExtras(bundle);
+        startActivity(intent);
+        finish();
     }
 }

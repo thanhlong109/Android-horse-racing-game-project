@@ -4,6 +4,7 @@ import android.app.Dialog;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.drawable.ColorDrawable;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.view.ViewGroup;
 import android.widget.SeekBar;
@@ -21,6 +22,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.group2.gameproject.databinding.ActivityGameBinding;
 import com.group2.gameproject.databinding.BetPopUpBinding;
+import com.group2.gameproject.databinding.VictoryPopUpBinding;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -31,15 +33,18 @@ public class GameActivity extends AppCompatActivity {
     private int defaultMoneyValue = 100;
     private int currentMoney = defaultMoneyValue;
     Dialog dialog;
+    Dialog dialogResult;
     BetPopUpBinding dialogBinding;
+    VictoryPopUpBinding victoryPopUpBinding;
     private int editingBetNum = 0;
-
+    private int currentNum = 0;
+    private int winMoney = 0;
     TextView txtUsername;
     GoogleSignInOptions gOptions;
     GoogleSignInClient gClient;
 
     private ArrayList<HorseData> horseDatas;
-
+    private MediaPlayer mediaPlayer;
     private boolean isCallChangeCB = true;
 
     @Override
@@ -48,8 +53,6 @@ public class GameActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         //link to view
         binding = ActivityGameBinding.inflate(getLayoutInflater());
-
-
         setContentView(binding.getRoot());
 
         txtUsername = (TextView) findViewById(R.id.userName);
@@ -61,6 +64,8 @@ public class GameActivity extends AppCompatActivity {
         if(gAccount != null){
             String loginName = gAccount.getDisplayName();
             txtUsername.setText(loginName);
+        }else{
+            txtUsername.setText(Data.getCurrentAcc().username);
         }
 
         //set up ui
@@ -79,6 +84,11 @@ public class GameActivity extends AppCompatActivity {
         binding.cb2.setOnCheckedChangeListener((v,isChecked) -> onSelectChangeHorseBet(2, isChecked));
         binding.cb3.setOnCheckedChangeListener((v,isChecked) -> onSelectChangeHorseBet(3, isChecked));
         reset();
+        binding.tvGuide.setOnClickListener(v ->{
+            Intent intent = new Intent(this, GuideActivity.class);
+            startActivity(intent);
+        });
+
 
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
@@ -184,6 +194,25 @@ public class GameActivity extends AppCompatActivity {
         dialogBinding.ibClose.setOnClickListener(v -> dialog.dismiss());
         dialogBinding.btnBet.setOnClickListener(v -> onBetClick());
 
+        victoryPopUpBinding = VictoryPopUpBinding.inflate(getLayoutInflater());
+        dialogResult = new Dialog(this);
+        dialogResult.setContentView(victoryPopUpBinding.getRoot());
+        dialogResult.setCancelable(false);
+        dialogResult.getWindow().setLayout(Resources.getSystem().getDisplayMetrics().widthPixels, Resources.getSystem().getDisplayMetrics().heightPixels);
+        dialogResult.getWindow().setBackgroundDrawable(new ColorDrawable(getColor(R.color.zxing_transparent)));
+        victoryPopUpBinding.ibClose.setOnClickListener(v -> dialogResult.dismiss());
+    }
+
+    private void showResultDialog(){
+        if(winMoney>0){
+            victoryPopUpBinding.tvResult.setText("You Correct!");
+            victoryPopUpBinding.ivFace.setImageResource(R.drawable.face_laugh_wink_solid);
+        }else{
+            victoryPopUpBinding.tvResult.setText("Better luck next time!");
+            victoryPopUpBinding.ivFace.setImageResource(R.drawable.face_sad_tear_solid);
+        }
+        victoryPopUpBinding.tvPlussMoney.setText("+"+winMoney);
+        dialogResult.show();
     }
 
     private void onBetClick(){
@@ -249,6 +278,7 @@ public class GameActivity extends AppCompatActivity {
 
         //enable change
         setChangeState(true);
+        currentNum=0;
 
     }
 
@@ -266,6 +296,9 @@ public class GameActivity extends AppCompatActivity {
         //disable
         setChangeState(false);
         binding.btnReset.setClickable(false);
+
+        mediaPlayer = MediaPlayer.create(this, R.raw.race_music);
+        mediaPlayer.start();
 
         binding.sb1.setMax(1000);
         binding.sb2.setMax(1000);
@@ -297,31 +330,33 @@ public class GameActivity extends AppCompatActivity {
             final long endTime = System.currentTimeMillis();
             horseData.finishTime = endTime - startTime;
             horseDatas.add(horseData);
-            runOnUiThread(() -> updateRanking());
+            runOnUiThread(() -> updateRanking(horseData));
 
         }).start();
     }
 
-    private void updateRanking(){
-        switch (horseDatas.size()){
+    private void updateRanking(HorseData h){
+
+        switch (++currentNum){
             case 1:{
-                HorseData h = horseDatas.get(0);
                 binding.tvResult1.setText("Đội "+h.horseNumber+" - Thời gian: "+(h.finishTime/1000.0) +" Giây");
                 binding.llTop1.setVisibility(ViewGroup.VISIBLE);
                 if(isCheckedHorse(h.horseNumber)){
-                    currentMoney+= getHorseBetValue(h.horseNumber);
+                    winMoney= getHorseBetValue(h.horseNumber);
+                    currentMoney+= winMoney;
                     updateMoneyUI();
+                }else{
+                    winMoney = 0;
                 }
                 break;
             }
             case 2:{
-                HorseData h = horseDatas.get(1);
+
                 binding.tvResult2.setText("Đội "+h.horseNumber+" - Thời gian: "+(h.finishTime/1000.0) +" Giây");
                 binding.llTop2.setVisibility(ViewGroup.VISIBLE);
                 break;
             }
             case 3:{
-                HorseData h = horseDatas.get(2);
                 binding.tvResult3.setText("Đội "+h.horseNumber+" - Thời gian: "+(h.finishTime/1000.0) +" Giây");
                 binding.llTop3.setVisibility(ViewGroup.VISIBLE);
                 onFinishRace();
@@ -350,6 +385,18 @@ public class GameActivity extends AppCompatActivity {
     }
 
     private void onFinishRace(){
+        mediaPlayer.stop();
         binding.btnReset.setClickable(true);
+        showResultDialog();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Giải phóng MediaPlayer khi Activity bị hủy
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
     }
 }
