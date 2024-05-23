@@ -6,15 +6,21 @@ import android.content.res.Resources;
 import android.graphics.drawable.ColorDrawable;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -40,6 +46,7 @@ public class GameActivity extends AppCompatActivity {
     private int currentNum = 0;
     private int winMoney = 0;
     TextView txtUsername;
+    Button btnLogout;
     GoogleSignInOptions gOptions;
     GoogleSignInClient gClient;
 
@@ -54,6 +61,8 @@ public class GameActivity extends AppCompatActivity {
         //link to view
         binding = ActivityGameBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        btnLogout = (Button) findViewById(R.id.btnLogout);
 
         txtUsername = (TextView) findViewById(R.id.userName);
 
@@ -89,6 +98,19 @@ public class GameActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+
+        btnLogout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                gClient.signOut().addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        finish();
+                        startActivity(new Intent(GameActivity.this, MainActivity.class));
+                    }
+                });
+            }
+        });
 
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
